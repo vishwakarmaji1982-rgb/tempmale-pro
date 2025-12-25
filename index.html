@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Temp Mail | Free Disposable Inbox</title>
+    <style>
+        :root {
+            --primary: #4F46E5;
+            --secondary: #10B981;
+            --bg: #F3F4F6;
+            --card: #FFFFFF;
+            --text-main: #1F2937;
+            --text-light: #6B7280;
+            --vpn-color: #EF4444; /* Red for urgency/attention */
+        }
+
+        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text-main); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        
+        /* Container */
+        .app-container { width: 100%; max-width: 800px; background: var(--card); border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); overflow: hidden; }
+        
+        /* Header */
+        header { padding: 25px; text-align: center; border-bottom: 1px solid #E5E7EB; }
+        h1 { margin: 0; font-size: 1.5rem; color: var(--text-main); }
+        .subtitle { color: var(--text-light); font-size: 0.9rem; margin-top: 5px; }
+
+        /* Ad Slots */
+        .ad-slot { background: #E5E7EB; color: #9CA3AF; height: 90px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; margin: 0; font-weight: bold; letter-spacing: 1px; }
+        
+        /* Email Control Center */
+        .control-panel { padding: 30px; background: #F9FAFB; display: flex; flex-direction: column; gap: 20px; align-items: center; }
+        
+        .email-display-box { 
+            background: white; border: 2px dashed #D1D5DB; padding: 15px 25px; 
+            border-radius: 12px; display: flex; align-items: center; gap: 15px; 
+            width: 100%; max-width: 500px; justify-content: space-between;
+        }
+        
+        #email-address { font-family: 'Courier New', monospace; font-size: 1.1rem; font-weight: 600; color: var(--primary); overflow: hidden; text-overflow: ellipsis; }
+        
+        .loader { border: 3px solid #f3f3f3; border-top: 3px solid var(--primary); border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: none; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Buttons */
+        .btn-group { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+        button { border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: transform 0.1s; font-size: 0.9rem; }
+        button:active { transform: scale(0.98); }
+        
+        .btn-copy { background: var(--primary); color: white; }
+        .btn-refresh { background: #E5E7EB; color: var(--text-main); }
+        
+        /* MONEY MAKER BUTTON (VPN) */
+        .btn-vpn { 
+            background: var(--vpn-color); color: white; display: flex; align-items: center; gap: 8px; 
+            box-shadow: 0 4px 6px rgba(239, 68, 68, 0.2);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+
+        /* Inbox */
+        .inbox-section { padding: 0 30px 30px; }
+        .inbox-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; margin-top: 20px; }
+        .inbox-title { font-weight: 700; color: var(--text-main); }
+        
+        .email-list { display: flex; flex-direction: column; gap: 10px; }
+        .email-item { background: #F3F4F6; padding: 15px; border-radius: 8px; cursor: pointer; transition: background 0.2s; border-left: 4px solid transparent; }
+        .email-item:hover { background: #E5E7EB; }
+        .email-item.unread { border-left: 4px solid var(--secondary); background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        
+        .meta { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-light); margin-bottom: 5px; }
+        .subject { font-weight: 600; color: var(--text-main); }
+
+        /* Message View */
+        #message-view { display: none; padding: 30px; }
+        .msg-tools { margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
+        .back-link { color: var(--text-light); text-decoration: none; font-size: 0.9rem; cursor: pointer; }
+        .back-link:hover { color: var(--primary); }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .email-display-box { flex-direction: column; text-align: center; }
+            .btn-group { width: 100%; }
+            button { flex: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <div class="ad-slot">AD SPACE (TOP BANNER)</div>
+
+        <header>
+            <h1>TempMail Pro</h1>
+            <div class="subtitle">Secure, Anonymous, Disposable Email</div>
+        </header>
+
+        <div class="control-panel" id="main-view">
+            <div class="email-display-box">
+                <span id="email-address">Initializing...</span>
+                <div class="loader" id="loader"></div>
+            </div>
+
+            <div class="btn-group">
+                <button class="btn-copy" onclick="copyToClipboard()">📋 Copy Email</button>
+                <button class="btn-refresh" onclick="createNewAccount()">🔄 New Address</button>
+                
+                <button class="btn-vpn" onclick="window.open('#', '_blank')">
+                    🛡️ Hide My IP
+                </button>
+            </div>
+        </div>
+
+        <div class="inbox-section" id="inbox-list">
+            <div class="inbox-header">
+                <span class="inbox-title">Inbox</span>
+                <span style="font-size: 0.8rem; color: #6B7280" id="status-text">Live Connection...</span>
+            </div>
+            <div id="emails-container" class="email-list">
+                <div style="text-align:center; padding: 20px; color: #9CA3AF;">Waiting for incoming mail...</div>
+            </div>
+        </div>
+
+        <div id="message-view">
+            <div class="msg-tools">
+                <span class="back-link" onclick="showInbox()">← Back to Inbox</span>
+            </div>
+            <h2 id="view-subject">Subject</h2>
+            <div class="meta">
+                <span id="view-from">From: ...</span>
+                <span id="view-date">Date</span>
+            </div>
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+            <div id="view-body"></div>
+            
+            <div class="ad-slot" style="margin-top: 30px;">AD SPACE (INSIDE EMAIL)</div>
+        </div>
+
+        <div class="ad-slot">AD SPACE (BOTTOM BANNER)</div>
+
+    </div>
+
+    <script>
+        const API_BASE = 'https://api.mail.tm';
+        let token = localStorage.getItem('tm_token');
+        let email = localStorage.getItem('tm_email');
+        let accountId = localStorage.getItem('tm_id');
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            if (token && email) {
+                renderEmail(email);
+                startPolling();
+            } else {
+                createNewAccount();
+            }
+        });
+
+        // 1. Create Account
+        async function createNewAccount() {
+            setLoading(true);
+            try {
+                // Get available domains
+                const domainRes = await fetch(`${API_BASE}/domains`);
+                const domainData = await domainRes.json();
+                const domain = domainData['hydra:member'][0].domain;
+
+                // Generate random credentials
+                const user = Math.random().toString(36).substring(7);
+                const password = Math.random().toString(36).substring(7);
+                const address = `${user}@${domain}`;
+
+                // Register
+                await fetch(`${API_BASE}/accounts`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ address, password })
+                });
+
+                // Login to get Token
+                const tokenRes = await fetch(`${API_BASE}/token`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ address, password })
+                });
+                const tokenData = await tokenRes.json();
+
+                // Save to LocalStorage
+                token = tokenData.token;
+                email = address;
+                accountId = tokenData.id;
+                
+                localStorage.setItem('tm_token', token);
+                localStorage.setItem('tm_email', email);
+                localStorage.setItem('tm_id', accountId);
+
+                renderEmail(email);
+                startPolling();
+                
+                // Clear inbox UI
+                document.getElementById('emails-container').innerHTML = '<div style="text-align:center; padding: 20px; color: #9CA3AF;">Waiting for incoming mail...</div>';
+
+            } catch (error) {
+                console.error('Error creating account:', error);
+                alert('Failed to generate email. Please try again.');
+            }
+            setLoading(false);
+        }
+
+        // 2. Poll for Messages
+        function startPolling() {
+            fetchMessages(); // Initial fetch
+            setInterval(fetchMessages, 5000); // Poll every 5s
+        }
+
+        async function fetchMessages() {
+            if (!token) return;
+
+            try {
+                const res = await fetch(`${API_BASE}/messages`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                const messages = data['hydra:member'];
+                
+                renderInbox(messages);
+            } catch (e) {
+                console.error("Polling error", e);
+            }
+        }
+
+        // 3. UI Functions
+        function renderEmail(addr) {
+            document.getElementById('email-address').textContent = addr;
+        }
+
+        function renderInbox(messages) {
+            const container = document.getElementById('emails-container');
+            if (messages.length === 0) return;
+
+            // Simple check to see if we need to re-render (naive)
+            // In production, compare IDs to avoid flickering
+            container.innerHTML = ''; 
+
+            messages.forEach(msg => {
+                const div = document.createElement('div');
+                div.className = `email-item ${msg.seen ? '' : 'unread'}`;
+                div.onclick = () => loadMessage(msg.id);
+                div.innerHTML = `
+                    <div class="meta">
+                        <span style="font-weight:bold">${msg.from.name || msg.from.address}</span>
+                        <span>${new Date(msg.createdAt).toLocaleTimeString()}</span>
+                    </div>
+                    <div class="subject">${msg.subject}</div>
+                    <div style="color:#6B7280; font-size:0.8rem; margin-top:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                        ${msg.intro || 'Click to read...'}
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        async function loadMessage(msgId) {
+            setLoading(true);
+            try {
+                const res = await fetch(`${API_BASE}/messages/${msgId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const msg = await res.json();
+
+                // Show Message View
+                document.getElementById('inbox-list').style.display = 'none';
+                document.getElementById('main-view').style.display = 'none';
+                document.getElementById('message-view').style.display = 'block';
+
+                // Populate Data
+                document.getElementById('view-subject').textContent = msg.subject;
+                document.getElementById('view-from').textContent = `From: ${msg.from.address}`;
+                document.getElementById('view-date').textContent = new Date(msg.createdAt).toLocaleString();
+                
+                // Securely render HTML (Basic iframe approach usually better, but direct HTML ok for simple use)
+                const bodyContainer = document.getElementById('view-body');
+                bodyContainer.innerHTML = msg.html && msg.html.length > 0 ? msg.html : `<pre>${msg.text}</pre>`;
+
+            } catch (e) {
+                console.error(e);
+            }
+            setLoading(false);
+        }
+
+        function showInbox() {
+            document.getElementById('message-view').style.display = 'none';
+            document.getElementById('inbox-list').style.display = 'block';
+            document.getElementById('main-view').style.display = 'flex';
+        }
+
+        function copyToClipboard() {
+            const text = document.getElementById('email-address').textContent;
+            navigator.clipboard.writeText(text);
+            const originalText = document.querySelector('.btn-copy').textContent;
+            document.querySelector('.btn-copy').textContent = '✅ Copied!';
+            setTimeout(() => document.querySelector('.btn-copy').textContent = originalText, 2000);
+        }
+
+        function setLoading(isLoading) {
+            document.getElementById('loader').style.display = isLoading ? 'block' : 'none';
+        }
+    </script>
+</body>
+</html>
